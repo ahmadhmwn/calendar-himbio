@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalender Kegiatan HIMBIO | Login</title>
+    <link rel="icon" href="assets/img/logo-himbio.png">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #5eeb99;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background: #ffffff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-container h1 {
+            margin-bottom: 20px;
+        }
+        .login-container input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .login-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #14b31c;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .login-container button:hover {
+            background-color: #19881e;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+        }
+    </style>
+    <script src="protected.js"></script>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Login Page</h1>
+        <div id="error-message" class="error"></div>
+        <input type="text" id="username" placeholder="Username" />
+        <input type="password" id="password" placeholder="Password" />
+        <button onclick="login()">Login</button>
+    </div>
+    <script>
+        // Encrypted credentials
+        const encryptedUsername = btoa("himbio"); // Encode to Base64
+        const encryptedPassword = btoa("bersamahimbio25");
+
+        function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            const errorMessage = document.getElementById("error-message");
+            errorMessage.textContent = "";
+
+            // Compare encrypted inputs
+            if (btoa(username) === encryptedUsername && btoa(password) === encryptedPassword) {
+                alert("Login berhasil!");
+                window.location.href = "himbio.html"; // Redirect on success
+            } else {
+                errorMessage.textContent = "Username atau password salah!";
+            }
+        }
+    </script>
+    <script src="protected.js"></script>
+</body>
+</html>

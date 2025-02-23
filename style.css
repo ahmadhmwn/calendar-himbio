@@ -1,0 +1,213 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-image: url('assets/img/bg-himbio.jpg');
+    background-size: cover;
+    background-repeat: no-repeat; 
+    background-position: center; 
+    color: #333;
+    line-height: 1.6;
+    min-height: 100vh; 
+    margin: 0;
+}
+
+/* Kontainer untuk kalender */
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    justify-content: center;
+    min-height: 100vh; 
+}
+
+.card-header {
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-header h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+}
+
+.d-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Kalender */
+.calendar {
+    background: linear-gradient(135deg, #14b31c, #f3ab3f);
+    border-radius: 20px; /* Sedikit lebih membulat */
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 100%;
+    max-width: 900px;
+    transform: scale(0.98); /* Efek zoom out sedikit */
+    transition: transform 0.3s ease;
+}
+
+.calendar:hover {
+    transform: scale(1); 
+}
+
+/* Tabel kalender */
+table {
+    width: 100%;
+    border-spacing: 0;
+    border-collapse: collapse;
+}
+
+th, td {
+    text-align: center;
+    padding: 20px;
+    font-size: 16px;
+    font-weight: 500;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    position: relative;
+    height: 60px; /* Pastikan kolom tetap memiliki tinggi yang konsisten */
+}
+
+th {
+    background-color: #ffffff;
+    color: #555;
+    font-weight: bold;
+}
+
+td {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    vertical-align: middle;
+    border-radius: 10px; /* Membulatkan sudut */
+    position: relative;
+    transition: all 0.3s ease; /* Transisi untuk efek hover */
+}
+
+td:hover {
+    background-color: #6ee49b;
+    cursor: pointer;
+    transform: scale(1.05);
+}
+
+/* Sticker untuk event */
+.sticker {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 1rem;
+    color: #6ee49b;
+    width: 10px;
+    height: 10px;
+    transition: transform 0.3s ease;
+    z-index: 1;
+}
+
+.sticker:hover {
+    transform: scale(1.3);
+}
+
+.stickers-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+}
+
+.sticker-img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+}
+
+/* Border ketika memilih tanggal */
+td.selected {
+    background-color: #79e46b;
+    border: 2px solid #f5d57e;
+    color: #fff;
+}
+
+/* Responsif Mobile*/
+/* Penyesuaian untuk tampilan mobile */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    .calendar {
+        padding: 10px;
+        max-width: 100%; /* Penuhi layar di perangkat kecil */
+        border-radius: 15px;
+    }
+
+    table {
+        width: 100%;
+    }
+
+    th, td {
+        padding: 10px; /* Kurangi padding */
+        font-size: 14px; /* Sesuaikan ukuran teks */
+    }
+
+    .toolbar {
+        flex-direction: column; /* Atur toolbar ke vertikal */
+        gap: 10px;
+    }
+
+    .toolbar button {
+        font-size: 12px; /* Kurangi ukuran tombol */
+        padding: 8px;
+    }
+
+    .form-group {
+        margin-bottom: 10px; /* Kurangi jarak antar elemen form */
+    }
+
+    button {
+        padding: 10px 20px; /* Sesuaikan ukuran tombol */
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 576px) {
+    .card-header h2 {
+        font-size: 20px;
+    }
+
+    .toolbar span {
+        font-size: 18px;
+    }
+
+    .calendar {
+        padding: 5px;
+    }
+
+    table th, table td {
+        padding: 8px;
+    }
+
+    .sticker {
+        font-size: 1em; 
+        width: 15px;
+        height: 15px;
+    }
+
+    .sticker-img {
+        width: 60%;
+        height: 60%;
+    }
+}
+

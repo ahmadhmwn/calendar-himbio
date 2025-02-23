@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Himbio Jaya</title>
+    <link rel="icon" href="assets/img/logo-himbio.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="style.css" rel="stylesheet">
+    <script src="protected.js"></script>
+    <style>
+        .event-list {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            background: linear-gradient(135deg,#14b31c, #f3ab3f);
+            box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.5);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .event-list:hover {
+            transform: translateY(-5px);
+            box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.15), -6px -6px 12px rgba(255, 255, 255, 0.6);
+        }
+
+        .event-list h5 {
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            color: #333;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        .event-list ul {
+            padding-left: 0;
+            list-style: none;
+            margin: 0;
+        }
+
+        .event-list ul li {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background: linear-gradient(145deg, #c5ffba, #eeffc0);
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1), -2px -2px 5px rgba(255, 255, 255, 0.5);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .event-list ul li:hover {
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.15), -3px -3px 6px rgba(255, 255, 255, 0.7);
+        }
+
+        .event-list ul li strong {
+            font-size: 1.2rem;
+            color: #444;
+        }
+
+        .event-list ul li img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            vertical-align: middle;
+            border: 2px solid #ddd;
+        }
+
+        .event-list ul li button {
+            background: #fa8057;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            font-size: 0.9rem;
+            transition: background 0.3s, transform 0.3s;
+        }
+
+        .event-list ul li button:hover {
+            background: #d94a20;
+            transform: scale(1.1);
+        }
+        /* Menambahkan sticky ke tombol menu dan mengatur posisi */
+        .toggle-bar {
+            position: sticky;  
+            top: 0px;         
+            right: 0;          
+            z-index: 9999;     
+            margin-top: 20px;  
+        }
+
+        .toggle-btn {
+            display: inline-block;
+            font-size: 16px;
+            padding: 10px 20px;
+            background-color: #ffffff;
+            color: #14b31c;
+            border-radius: 25px;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .toggle-btn:hover {
+            background-color: #14b31c;
+        }
+
+        .toggle-menu {
+            display: none;
+            background-color: #f3ab3f;
+            padding: 15px;
+            border-radius: 8px;
+            position: absolute;
+            top: 10px;  
+            right: 0;
+            width: 200px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            transition: opacity 0.3s ease;
+        }
+
+        .toggle-menu ul {
+            padding-left: 0;
+        }
+
+        .toggle-menu ul li a {
+            display: block;
+            padding: 10px;
+            color: #ffffff;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .toggle-menu ul li a:hover {
+            background-color: #ffffff;
+            color: #14b31c;
+        }
+
+        .toggle-menu.active {
+            display: block;
+            opacity: 1;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card-header shadow mt-2" style="background: linear-gradient(to right, #14b31c, #f3ab3f); color: white; padding: 15px; border-radius: 8px;">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="text-white">Kalender Kegiatan HIMBIO</h4>
+                <img src="assets/img/logo-himbio.png" width="60px" height="50px" alt="">
+            </div>
+        </div>
+
+        <br>
+        <div class="toolbar">
+            <div class="card-header bg-light mb-2" style="border-radius: 8px;">
+                <button id="prevMonth" class="btn btn-success">&lt;</button>
+                <span id="currentMonthYear"></span>
+                <button id="nextMonth" class="btn btn-success">&gt;</button>
+                &nbsp;
+                <button class="btn btn-primary toggle-btn shadow" id="toggleMenuBtn" onclick="toggleMenu()">☰</button>
+                <div class="toggle-menu" id="toggleMenu">
+                    <ul class="list-unstyled">
+                        <button class="btn btn-success" id="closeMenuBtn" onclick="toggleMenu()">x</button>
+                        <li><a href="#" class="btn btn-sm">Admin Kestari</a></li>
+                        <li><a href="index.html" class="btn btn-link">Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="calendar">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Min</th>
+                                <th>Sen</th>
+                                <th>Sel</th>
+                                <th>Rab</th>
+                                <th>Kam</th>
+                                <th>Jum</th>
+                                <th>Sab</th>
+                            </tr>
+                        </thead>
+                        <tbody id="calendarBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-4 mt-2 mb-2">
+                <div id="eventList" class="event-list">
+                    <h5 class="text-white">Kegiatan di bulan ini</h5>
+                    <ul class="list-group" id="eventListItems"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Add Event -->
+        <div class="modal fade" id="eventModal" tabindex="-1" role="dialog" aria-labelledby="eventModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="eventModalLabel">Tambah Agenda Kegiatan</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form id="addEventForm">
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="date">Tanggal</label>
+                                <input type="date" id="date" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="progja">Bidang</label>
+                                <select id="progja" class="text-dark form-control" multiple>
+                                    <option value="Ketua & Wakil Ketua">Ketua & Wakil Ketua</option>
+                                    <option value="Sekretaris">Sekretaris</option>
+                                    <option value="Bendahara">Bendahara</option>
+                                    <option value="PSDM">PSDM</option>
+                                    <option value="Jarkominfo">Jarkominfo</option>
+                                    <option value="Diklit">Diklit</option>
+                                    <option value="KWU">KWU</option>
+                                    <option value="Kestari">Kestari</option>
+                                    <option value="PKM">PKM</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="event">Kegiatan</label>
+                                <input type="text" id="event" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="stickers">Stiker Penanda Kegiatan</label>
+                                <select id="stickers" class="text-dark form-control" multiple>
+                                    <option value="assets/img/ketum.png">1</option>
+                                    <option value="assets/img/waketum.png">2</option>
+                                    <option value="assets/img/bendum.png">3</option>
+                                    <option value="assets/img/sekre.png">4</option>
+                                    <option value="assets/img/psdm.png">5</option>
+                                    <option value="assets/img/psdm-kadiv1.png">6</option>
+                                    <option value="assets/img/psdm-kadiv2.png">7</option>
+                                    <option value="assets/img/jarkom.png">8</option>
+                                    <option value="assets/img/jarkom-kadiv1.png">9</option>
+                                    <option value="assets/img/jarkom-kadiv2.png">10</option>
+                                    <option value="assets/img/diklit.png">11</option>
+                                    <option value="assets/img/kwu.png">12</option>
+                                    <option value="assets/img/kestari.png">13</option>
+                                    <option value="assets/img/pkm.png">14</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" id="deleteEventButton" class="btn" style="display: none;"></button>
+                            <button type="submit" class="btn btn-success">Simpan Kegiatan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function toggleMenu() {
+                const menu = document.getElementById('toggleMenu');
+                menu.classList.toggle('active');
+            }
+
+            const events = JSON.parse(localStorage.getItem('events')) || {};
+            let currentMonth = new Date().getMonth();
+            let currentYear = new Date().getFullYear();
+        
+            function renderCalendar() {
+                const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                const startDay = new Date(currentYear, currentMonth, 1).getDay();
+        
+                document.getElementById('currentMonthYear').textContent =
+                    new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
+        
+                const calendarBody = document.getElementById('calendarBody');
+                calendarBody.innerHTML = '';
+                let row = document.createElement('tr');
+        
+                for (let i = 0; i < startDay; i++) {
+                    row.appendChild(document.createElement('td'));
+                }
+        
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const cell = document.createElement('td');
+                    cell.textContent = day;
+                    cell.className = 'calendar-day';
+                    cell.onclick = () => openEventModal(date);
+        
+                    if (events[date]) {
+                        const stickersContainer = document.createElement('div');
+                        stickersContainer.className = 'stickers-container';
+        
+                        events[date].stickers.forEach(sticker => {
+                            const img = document.createElement('img');
+                            img.src = sticker;
+                            img.className = 'sticker-img';
+                            stickersContainer.appendChild(img);
+                        });
+        
+                        cell.appendChild(stickersContainer);
+                    }
+        
+                    row.appendChild(cell);
+        
+                    if ((day + startDay) % 7 === 0 || day === daysInMonth) {
+                        calendarBody.appendChild(row);
+                        row = document.createElement('tr');
+                    }
+                }
+            }
+        
+            function openEventModal(date) {
+                document.getElementById('date').value = date;
+        
+                if (events[date]) {
+                    document.getElementById('event').value = events[date].title;
+                    const progjaSelect = document.getElementById('progja');
+                    Array.from(progjaSelect.options).forEach(option => {
+                        option.selected = events[date].progja?.includes(option.value) || false;
+                    });
+        
+                    const stickersSelect = document.getElementById('stickers');
+                    Array.from(stickersSelect.options).forEach(option => {
+                        option.selected = events[date].stickers.includes(option.value);
+                    });
+        
+                    document.getElementById('deleteEventButton').style.display = 'block';
+                } else {
+                    document.getElementById('event').value = '';
+                    document.getElementById('progja').value = '';
+                    document.getElementById('stickers').value = '';
+                    document.getElementById('deleteEventButton').style.display = 'none';
+                }
+        
+                $('#eventModal').modal('show');
+            }
+        
+            function updateEventList() {
+                const eventListItems = document.getElementById('eventListItems');
+                eventListItems.innerHTML = '';
+        
+                const sortedDates = Object.keys(events).sort();
+        
+                sortedDates.forEach(date => {
+                    const [year, month] = date.split('-');
+                    if (parseInt(year) === currentYear && parseInt(month) - 1 === currentMonth) {
+                        const eventItem = document.createElement('li');
+                        eventItem.className = 'bg-white list-group-item d-flex justify-content-between align-items-center';
+        
+                        const stickersHTML = events[date].stickers
+                            .map(sticker => `<img src="${sticker}" class="sticker-img mr-1" style="width: 110px; height: 110px;">`)
+                            .join('');
+        
+                        eventItem.innerHTML = `
+                            <div>
+                                ${stickersHTML}
+                            </div>
+                            <div class="text-success">
+                                <strong>${events[date].progja.join(', ')}</strong>
+                                <br>
+                                Agenda: ${events[date].title}
+                                <h6>Pelaksanaan: ${date}</h6>
+                            </div>
+                            <button class="btn btn-sm btn-danger" onclick="deleteEvent('${date}')">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        `;
+                        eventListItems.appendChild(eventItem);
+                    }
+                });
+            }
+        
+            function deleteEvent(date) {
+                if (events[date]) {
+                    delete events[date];
+                    localStorage.setItem('events', JSON.stringify(events));
+                    renderCalendar();
+                    updateEventList();
+                }
+            }
+        
+            document.getElementById('addEventForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+        
+                const date = document.getElementById('date').value;
+                const title = document.getElementById('event').value;
+                const progja = Array.from(document.getElementById('progja').selectedOptions).map(option => option.value);
+                const stickers = Array.from(document.getElementById('stickers').selectedOptions).map(option => option.value);
+        
+                events[date] = { title, progja, stickers };
+                localStorage.setItem('events', JSON.stringify(events));
+        
+                renderCalendar();
+                updateEventList();
+                $('#eventModal').modal('hide');
+            });
+        
+            document.getElementById('prevMonth').addEventListener('click', () => {
+                currentMonth--;
+                if (currentMonth < 0) {
+                    currentMonth = 11;
+                    currentYear--;
+                }
+                renderCalendar();
+                updateEventList();
+            });
+        
+            document.getElementById('nextMonth').addEventListener('click', () => {
+                currentMonth++;
+                if (currentMonth > 11) {
+                    currentMonth = 0;
+                    currentYear++;
+                }
+                renderCalendar();
+                updateEventList();
+            });
+        
+            renderCalendar();
+            updateEventList();
+        </script>
+        <script src="protected.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    </div>
+</body>
+
+</html>

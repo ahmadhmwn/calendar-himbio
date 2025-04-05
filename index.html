@@ -40,7 +40,7 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            background-image: url('assets/bg-himbio.jpg');
+            background-image: url('assets/img/bg-himbio.jpg');
             color: var(--dark);
             line-height: 1.6;
             min-height: 100vh;
@@ -885,7 +885,7 @@
         <div class="card">
             <div id="login-section">
                 <div class="login-logo">
-                    <img src="assets/logo-himbio.png" alt="" style="width: 100px;">
+                    <img src="assets/img/logo-himbio.png" alt="" style="width: 100px;">
                 </div>
                 <h2 class="login-title">Himbio Calendar</h2>
 
@@ -1006,14 +1006,19 @@
             </div>
         </div>
     </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Inisialisasi Supabase
+        const supabaseUrl = 'https://zpitonulsomqjmgmphzo.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwaXRvbnVsc29tcWptZ21waHpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDE1OTEsImV4cCI6MjA1OTQxNzU5MX0.pNLPFUOCRFXLFRvKLPTbMsi_HFRcJT3B73SZxgdviqk';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
         const users = [
             { username: "kabid kestari", password: "bersamahimbio25", role: "admin" },
             { username: "user", password: "himbio", role: "user" }
         ];
 
-        let events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+        let events = [];
         let currentUser = null;
         let currentDate = new Date();
         let selectedDate = null;
@@ -1069,17 +1074,48 @@
             }
         });
 
+        // Fungsi untuk memuat events dari Supabase
+        async function loadEvents() {
+            const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+            const { data, error } = await supabase
+                .from('events')
+                .select('*')
+                .gte('date', firstDayOfMonth.toISOString())
+                .lte('date', lastDayOfMonth.toISOString())
+                .order('date', { ascending: true });
+
+            if (error) {
+                console.error('Error loading events:', error);
+                return [];
+            }
+            return data || [];
+        }
+
         // Initialize the application
-        function init() {
+        async function init() {
             if (localStorage.getItem('currentUser')) {
                 currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                events = await loadEvents();
                 handleSuccessfulLogin();
+
+                // Subscribe to realtime updates
+                supabase
+                    .channel('events-changes')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, async () => {
+                        events = await loadEvents();
+                        renderCalendar();
+                        renderMonthEvents();
+                    })
+                    .subscribe();
             }
         }
 
         // Navigation between months
-        function navigateMonth(direction) {
+        async function navigateMonth(direction) {
             currentDate.setMonth(currentDate.getMonth() + direction);
+            events = await loadEvents();
             renderCalendar();
             renderMonthEvents();
         }
@@ -1102,7 +1138,7 @@
         }
 
         // After successful login
-        function handleSuccessfulLogin() {
+        async function handleSuccessfulLogin() {
             loginSection.style.display = 'none';
             calendarSection.style.display = 'block';
             loginMessage.textContent = '';
@@ -1118,6 +1154,7 @@
                 adminControls.style.display = currentUser.role === 'admin' ? 'block' : 'none';
             }
 
+            events = await loadEvents();
             renderCalendar();
             renderMonthEvents();
         }
@@ -1270,12 +1307,12 @@
             eventElement.className = 'month-event';
 
             eventElement.innerHTML = `
-                <div class="event-date">${formattedDate}</div>
-                <div class="event-info">
-                    <h4>${event.title}</h4>
-                    ${event.description ? `<p>${event.description.substring(0, 50)}${event.description.length > 50 ? '...' : ''}</p>` : ''}
-                </div>
-            `;
+            <div class="event-date">${formattedDate}</div>
+            <div class="event-info">
+                <h4>${event.title}</h4>
+                ${event.description ? `<p>${event.description.substring(0, 50)}${event.description.length > 50 ? '...' : ''}</p>` : ''}
+            </div>
+        `;
 
             // Add admin actions if user is admin
             if (currentUser && currentUser.role === 'admin') {
@@ -1364,94 +1401,56 @@
 
         // Open event modal for adding/editing
         function openEventModal(date, event = null) {
-            console.log('openEventModal called with:', date, event);
-
-            if (!modal) {
-                console.error('Modal element not found!');
-                return;
-            }
-
             selectedDate = date;
             selectedEvent = event;
 
-            try {
-                const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-                modalDate.textContent = date.toLocaleDateString('id-ID', dateOptions);
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            modalDate.textContent = date.toLocaleDateString('id-ID', dateOptions);
 
-                // Show events for this date
-                renderEventsForDate(date);
+            // Show events for this date
+            renderEventsForDate(date);
 
-                // Set form values based on whether we're editing or adding
-                if (event) {
-                    eventTitle.value = event.title;
-                    eventDesc.value = event.description || '';
-                    deleteEventBtn.style.display = 'inline-block';
-                } else {
-                    eventTitle.value = '';
-                    eventDesc.value = '';
-                    deleteEventBtn.style.display = 'none';
-                }
-
-                // Show modal dengan timeout kecil untuk memastikan render selesai
-                setTimeout(() => {
-                    modal.style.display = 'block';
-                    console.log('Modal should be visible now');
-                }, 50);
-
-            } catch (error) {
-                console.error('Error in openEventModal:', error);
+            // Set form values based on whether we're editing or adding
+            if (event) {
+                eventTitle.value = event.title;
+                eventDesc.value = event.description || '';
+                deleteEventBtn.style.display = 'inline-block';
+            } else {
+                eventTitle.value = '';
+                eventDesc.value = '';
+                deleteEventBtn.style.display = 'none';
             }
+
+            modal.style.display = 'block';
         }
 
         // Render events for a specific date
-        // Render events for a specific date
         function renderEventsForDate(date) {
-            if (!eventList) {
-                console.error('eventList element not found!');
-                return;
-            }
-
             eventList.innerHTML = '';
 
-            try {
-                const dayEvents = events.filter(e => {
-                    try {
-                        const eDate = new Date(e.date);
-                        return eDate.toDateString() === date.toDateString();
-                    } catch (error) {
-                        console.error('Error processing event date:', e.date, error);
-                        return false;
-                    }
-                });
+            const dayEvents = events.filter(e => {
+                const eDate = new Date(e.date);
+                return eDate.toDateString() === date.toDateString();
+            });
 
-                if (dayEvents.length > 0) {
-                    dayEvents.forEach(e => {
-                        const eventElement = document.createElement('div');
-                        eventElement.className = 'event';
-                        eventElement.textContent = e.title;
-
-                        // Tambahkan data attribute untuk debugging
-                        eventElement.setAttribute('data-event-id', e.id);
-
-                        eventElement.addEventListener('click', (ev) => {
-                            ev.stopPropagation();
-                            console.log('Event clicked:', e.id);
-                            showEventDetail(e);
-                        });
-
-                        eventList.appendChild(eventElement);
+            if (dayEvents.length > 0) {
+                dayEvents.forEach(e => {
+                    const eventElement = document.createElement('div');
+                    eventElement.className = 'event';
+                    eventElement.textContent = e.title;
+                    eventElement.addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        showEventDetail(e);
                     });
-                } else {
-                    eventList.innerHTML = '<p class="no-events">Tidak ada acara</p>';
-                }
-            } catch (error) {
-                console.error('Error in renderEventsForDate:', error);
-                eventList.innerHTML = '<p class="error">Gagal memuat acara</p>';
+                    eventList.appendChild(eventElement);
+                });
+            } else {
+                eventList.innerHTML = '<p class="no-events">Tidak ada acara</p>';
             }
         }
 
         // Save event (add or update)
-        function saveEvent() {
+        async function saveEvent() {
             // Validasi admin
             if (!currentUser || currentUser.role !== 'admin') {
                 alert('Hanya admin yang bisa menambah/mengubah acara');
@@ -1471,8 +1470,15 @@
             try {
                 if (selectedEvent) {
                     // Update existing event
-                    selectedEvent.title = title;
-                    selectedEvent.description = description;
+                    const { error } = await supabase
+                        .from('events')
+                        .update({
+                            title: title,
+                            description: description
+                        })
+                        .eq('id', selectedEvent.id);
+
+                    if (error) throw error;
                     alert('Acara berhasil diperbarui');
                 } else {
                     // Add new event
@@ -1481,15 +1487,19 @@
                         date: selectedDate.toISOString(),
                         title,
                         description,
-                        createdBy: currentUser.username,
-                        createdAt: new Date().toISOString()
+                        created_by: currentUser.username
                     };
-                    events.push(newEvent);
+
+                    const { error } = await supabase
+                        .from('events')
+                        .insert([newEvent]);
+
+                    if (error) throw error;
                     alert('Acara berhasil ditambahkan');
                 }
 
-                // Simpan dan update UI
-                localStorage.setItem('calendarEvents', JSON.stringify(events));
+                // Refresh data
+                events = await loadEvents();
                 renderCalendar();
                 renderMonthEvents();
                 modal.style.display = 'none';
@@ -1523,19 +1533,17 @@
         }
 
         // Actual deletion logic
-        function deleteEventConfirmed(event) {
+        async function deleteEventConfirmed(event) {
             try {
-                const originalLength = events.length;
-                events = events.filter(e => e.id !== event.id);
+                const { error } = await supabase
+                    .from('events')
+                    .delete()
+                    .eq('id', event.id);
 
-                if (events.length === originalLength) {
-                    alert('Acara tidak ditemukan untuk dihapus');
-                    return;
-                }
+                if (error) throw error;
 
-                localStorage.setItem('calendarEvents', JSON.stringify(events));
+                events = await loadEvents();
                 alert('Acara berhasil dihapus');
-
                 renderCalendar();
                 renderMonthEvents();
                 modal.style.display = 'none';
@@ -1545,29 +1553,6 @@
                 console.error('Error deleting event:', error);
                 alert('Gagal menghapus acara: ' + error.message);
             }
-        }
-
-        // Dalam fungsi renderCalendar(), perbaiki bagian ini:
-        dayElement.addEventListener('click', (e) => {
-            if (e.target !== dayElement && !e.target.classList.contains('day-number')) {
-                return;
-            }
-
-            console.log('Day clicked:', i);
-            const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
-
-            // Pastikan tanggal valid
-            if (isNaN(clickedDate.getTime())) {
-                console.error('Invalid date created');
-                return;
-            }
-
-            openEventModal(clickedDate);
-        });
-
-        // Show alert message
-        function showAlert(type, message) {
-            alert(message); // Temporary solution
         }
 
         // Initialize the application

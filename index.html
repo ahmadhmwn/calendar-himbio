@@ -1011,552 +1011,557 @@
     <script>
         const supabaseUrl = 'https://zpitonulsomqjmgmphzo.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwaXRvbnVsc29tcWptZ21waHpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDE1OTEsImV4cCI6MjA1OTQxNzU5MX0.pNLPFUOCRFXLFRvKLPTbMsi_HFRcJT3B73SZxgdviqk';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-        const users = [
-            { username: "kabid kestari", password: "bersamahimbio25", role: "admin" },
-            { username: "user", password: "himbio", role: "user" }
-        ];
-
-        let events = [];
-        let currentUser = null;
-        let currentDate = new Date();
-        let selectedDate = null;
-        let selectedEvent = null;
-
-        // DOM Elements
-        const loginSection = document.getElementById('login-section');
-        const calendarSection = document.getElementById('calendar-section');
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
-        const loginBtn = document.getElementById('login-btn');
-        const loginMessage = document.getElementById('login-message');
-        const logoutBtn = document.getElementById('logout-btn');
-        const monthYearElement = document.getElementById('month-year');
-        const calendarGrid = document.getElementById('calendar-grid');
-        const prevMonthBtn = document.getElementById('prev-month');
-        const nextMonthBtn = document.getElementById('next-month');
-        const modal = document.getElementById('event-modal');
-        const modalDate = document.getElementById('modal-date');
-        const eventList = document.getElementById('event-list');
-        const eventTitle = document.getElementById('event-title');
-        const eventDesc = document.getElementById('event-desc');
-        const saveEventBtn = document.getElementById('save-event');
-        const deleteEventBtn = document.getElementById('delete-event');
-        const closeModal = document.getElementsByClassName('close');
-        const eventsListContainer = document.getElementById('events-list');
-        const eventsCount = document.getElementById('events-count');
-        const eventDetailModal = document.getElementById('event-detail-modal');
-        const detailModalTitle = document.getElementById('detail-modal-title');
-        const detailDate = document.getElementById('detail-date');
-        const detailTitle = document.getElementById('detail-title');
-        const detailDesc = document.getElementById('detail-desc');
-        const detailModalFooter = document.getElementById('detail-modal-footer');
-        const adminControls = document.getElementById('admin-controls');
-
-        // Event Listeners
-        loginBtn.addEventListener('click', handleLogin);
-        logoutBtn.addEventListener('click', handleLogout);
-        prevMonthBtn.addEventListener('click', () => navigateMonth(-1));
-        nextMonthBtn.addEventListener('click', () => navigateMonth(1));
-        saveEventBtn.addEventListener('click', saveEvent);
-        deleteEventBtn.addEventListener('click', deleteEvent);
-
-        Array.from(closeModal).forEach(btn => {
-            btn.addEventListener('click', function () {
-                this.closest('.modal').style.display = 'none';
-            });
+        document.addEventListener('DOMContentLoaded', () => {
+            window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
+            initApp();
         });
+        
+        function initApp() {
 
-        window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) {
-                e.target.style.display = 'none';
-            }
-        });
+            const users = [
+                { username: "kabid kestari", password: "bersamahimbio25", role: "admin" },
+                { username: "user", password: "himbio", role: "user" }
+            ];
 
-        // Fungsi untuk memuat events dari Supabase
-        async function loadEvents() {
-            const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-            const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            let events = [];
+            let currentUser = null;
+            let currentDate = new Date();
+            let selectedDate = null;
+            let selectedEvent = null;
 
-            const { data, error } = await supabase
-                .from('events')
-                .select('*')
-                .gte('date', firstDayOfMonth.toISOString())
-                .lte('date', lastDayOfMonth.toISOString())
-                .order('date', { ascending: true });
+            const loginSection = document.getElementById('login-section');
+            const calendarSection = document.getElementById('calendar-section');
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const loginBtn = document.getElementById('login-btn');
+            const loginMessage = document.getElementById('login-message');
+            const logoutBtn = document.getElementById('logout-btn');
+            const monthYearElement = document.getElementById('month-year');
+            const calendarGrid = document.getElementById('calendar-grid');
+            const prevMonthBtn = document.getElementById('prev-month');
+            const nextMonthBtn = document.getElementById('next-month');
+            const modal = document.getElementById('event-modal');
+            const modalDate = document.getElementById('modal-date');
+            const eventList = document.getElementById('event-list');
+            const eventTitle = document.getElementById('event-title');
+            const eventDesc = document.getElementById('event-desc');
+            const saveEventBtn = document.getElementById('save-event');
+            const deleteEventBtn = document.getElementById('delete-event');
+            const closeModal = document.getElementsByClassName('close');
+            const eventsListContainer = document.getElementById('events-list');
+            const eventsCount = document.getElementById('events-count');
+            const eventDetailModal = document.getElementById('event-detail-modal');
+            const detailModalTitle = document.getElementById('detail-modal-title');
+            const detailDate = document.getElementById('detail-date');
+            const detailTitle = document.getElementById('detail-title');
+            const detailDesc = document.getElementById('detail-desc');
+            const detailModalFooter = document.getElementById('detail-modal-footer');
+            const adminControls = document.getElementById('admin-controls');
 
-            if (error) {
-                console.error('Error loading events:', error);
-                return [];
-            }
-            return data || [];
-        }
+            // Event Listeners
+            loginBtn.addEventListener('click', handleLogin);
+            logoutBtn.addEventListener('click', handleLogout);
+            prevMonthBtn.addEventListener('click', () => navigateMonth(-1));
+            nextMonthBtn.addEventListener('click', () => navigateMonth(1));
+            saveEventBtn.addEventListener('click', saveEvent);
+            deleteEventBtn.addEventListener('click', deleteEvent);
 
-        // Initialize the application
-        async function init() {
-            if (localStorage.getItem('currentUser')) {
-                currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                events = await loadEvents();
-                handleSuccessfulLogin();
-
-                // Subscribe to realtime updates
-                supabase
-                    .channel('events-changes')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, async () => {
-                        events = await loadEvents();
-                        renderCalendar();
-                        renderMonthEvents();
-                    })
-                    .subscribe();
-            }
-        }
-
-        // Navigation between months
-        async function navigateMonth(direction) {
-            currentDate.setMonth(currentDate.getMonth() + direction);
-            events = await loadEvents();
-            renderCalendar();
-            renderMonthEvents();
-        }
-
-        // Login handler
-        function handleLogin() {
-            const username = usernameInput.value.trim();
-            const password = passwordInput.value.trim();
-
-            const user = users.find(u => u.username === username && u.password === password);
-
-            if (user) {
-                currentUser = user;
-                localStorage.setItem('currentUser', JSON.stringify(user));
-                handleSuccessfulLogin();
-            } else {
-                loginMessage.textContent = 'Username atau password salah';
-                loginMessage.style.color = 'red';
-            }
-        }
-
-        // After successful login
-        async function handleSuccessfulLogin() {
-            loginSection.style.display = 'none';
-            calendarSection.style.display = 'block';
-            loginMessage.textContent = '';
-
-            // Update UI based on user role
-            document.getElementById('welcome-user').textContent = `Selamat datang, ${currentUser.username}`;
-            const roleBadge = document.getElementById('user-role-badge');
-            roleBadge.textContent = currentUser.role === 'admin' ? 'Admin' : 'User';
-            roleBadge.className = `user-badge ${currentUser.role}`;
-
-            // Show admin controls if admin
-            if (adminControls) {
-                adminControls.style.display = currentUser.role === 'admin' ? 'block' : 'none';
-            }
-
-            events = await loadEvents();
-            renderCalendar();
-            renderMonthEvents();
-        }
-
-        // Logout handler
-        function handleLogout() {
-            currentUser = null;
-            localStorage.removeItem('currentUser');
-            usernameInput.value = '';
-            passwordInput.value = '';
-            loginSection.style.display = 'block';
-            calendarSection.style.display = 'none';
-
-            // Reset UI
-            document.getElementById('welcome-user').textContent = 'Selamat datang, ';
-            const roleBadge = document.getElementById('user-role-badge');
-            roleBadge.textContent = '';
-            roleBadge.className = 'user-badge';
-        }
-
-        // Render the calendar
-        function renderCalendar() {
-            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
-                "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            monthYearElement.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
-
-            calendarGrid.innerHTML = '';
-
-            // Day headers
-            const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-            dayNames.forEach(day => {
-                const dayHeader = document.createElement('div');
-                dayHeader.className = 'day-header';
-                dayHeader.textContent = day;
-                calendarGrid.appendChild(dayHeader);
+            Array.from(closeModal).forEach(btn => {
+                btn.addEventListener('click', function () {
+                    this.closest('.modal').style.display = 'none';
+                });
             });
 
-            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-            const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-            const daysInMonth = lastDay.getDate();
-            const startingDay = firstDay.getDay();
-
-            // Previous month days
-            const prevMonthLastDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate();
-            for (let i = 0; i < startingDay; i++) {
-                const dayElement = document.createElement('div');
-                dayElement.className = 'day other-month';
-                dayElement.textContent = prevMonthLastDay - startingDay + i + 1;
-                calendarGrid.appendChild(dayElement);
-            }
-
-            // Current month days
-            const today = new Date();
-            for (let i = 1; i <= daysInMonth; i++) {
-                const dayElement = document.createElement('div');
-                dayElement.className = 'day';
-
-                // Highlight today
-                const isToday = currentDate.getFullYear() === today.getFullYear() &&
-                    currentDate.getMonth() === today.getMonth() &&
-                    i === today.getDate();
-                if (isToday) {
-                    dayElement.classList.add('today');
+            window.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal')) {
+                    e.target.style.display = 'none';
                 }
-
-                dayElement.innerHTML = `<div class="day-number">${i}</div>`;
-
-                // Add events for this day
-                const currentDayEvents = getEventsForDay(i);
-                currentDayEvents.forEach(event => {
-                    const eventElement = document.createElement('div');
-                    eventElement.className = 'event';
-                    eventElement.textContent = event.title;
-                    eventElement.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        showEventDetail(event);
-                    });
-                    dayElement.appendChild(eventElement);
-                });
-
-                // Add click event for adding/viewing events
-                dayElement.addEventListener('click', () => {
-                    const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
-                    openEventModal(clickedDate);
-                });
-
-                calendarGrid.appendChild(dayElement);
-            }
-
-            // Next month days
-            const totalCells = startingDay + daysInMonth;
-            const remainingCells = totalCells <= 35 ? 35 - totalCells : 42 - totalCells;
-            for (let i = 1; i <= remainingCells; i++) {
-                const dayElement = document.createElement('div');
-                dayElement.className = 'day other-month';
-                dayElement.textContent = i;
-                calendarGrid.appendChild(dayElement);
-            }
-        }
-
-        // Get events for a specific day
-        function getEventsForDay(day) {
-            return events.filter(event => {
-                const eventDate = new Date(event.date);
-                return eventDate.getFullYear() === currentDate.getFullYear() &&
-                    eventDate.getMonth() === currentDate.getMonth() &&
-                    eventDate.getDate() === day;
-            });
-        }
-
-        // Render month events list
-        function renderMonthEvents() {
-            eventsListContainer.innerHTML = '';
-
-            // Filter events for current month
-            const monthEvents = events.filter(event => {
-                const eventDate = new Date(event.date);
-                return eventDate.getFullYear() === currentDate.getFullYear() &&
-                    eventDate.getMonth() === currentDate.getMonth();
             });
 
-            // Update events count
-            eventsCount.textContent = `${monthEvents.length} kegiatan`;
+            // Fungsi untuk memuat events dari Supabase
+            async function loadEvents() {
+                const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-            if (monthEvents.length === 0) {
-                const noEvents = document.createElement('div');
-                noEvents.className = 'no-events';
-                noEvents.textContent = 'Tidak ada kegiatan di bulan ini';
-                eventsListContainer.appendChild(noEvents);
-                return;
-            }
-
-            // Sort events by date
-            monthEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-            // Display each event
-            monthEvents.forEach(event => {
-                const eventElement = createEventElement(event);
-                eventsListContainer.appendChild(eventElement);
-            });
-        }
-
-        // Create an event element for the month view
-        function createEventElement(event) {
-            const eventDate = new Date(event.date);
-            const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-            const formattedDate = `${dayNames[eventDate.getDay()]}, ${eventDate.getDate()}/${eventDate.getMonth() + 1}`;
-
-            const eventElement = document.createElement('div');
-            eventElement.className = 'month-event';
-
-            eventElement.innerHTML = `
-            <div class="event-date">${formattedDate}</div>
-            <div class="event-info">
-                <h4>${event.title}</h4>
-                ${event.description ? `<p>${event.description.substring(0, 50)}${event.description.length > 50 ? '...' : ''}</p>` : ''}
-            </div>
-        `;
-
-            // Add admin actions if user is admin
-            if (currentUser && currentUser.role === 'admin') {
-                const actionsDiv = document.createElement('div');
-                actionsDiv.className = 'event-actions';
-
-                // Edit button
-                const editBtn = document.createElement('button');
-                editBtn.className = 'event-action-btn edit';
-                editBtn.innerHTML = '<i class="fas fa-edit"></i>';
-                editBtn.title = 'Edit';
-                editBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openEventModal(new Date(event.date), event);
-                });
-
-                // Delete button
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'event-action-btn delete';
-                deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                deleteBtn.title = 'Delete';
-                deleteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    confirmDeleteEvent(event);
-                });
-
-                actionsDiv.appendChild(editBtn);
-                actionsDiv.appendChild(deleteBtn);
-                eventElement.appendChild(actionsDiv);
-            }
-
-            // Add click event for showing details
-            eventElement.addEventListener('click', () => {
-                showEventDetail(event);
-            });
-
-            return eventElement;
-        }
-
-        // Show event details
-        function showEventDetail(event) {
-            const eventDate = new Date(event.date);
-            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-
-            detailModalTitle.textContent = 'Detail Kegiatan';
-            detailDate.textContent = eventDate.toLocaleDateString('id-ID', dateOptions);
-            detailTitle.textContent = event.title;
-            detailDesc.textContent = event.description || 'Tidak ada deskripsi';
-
-            // Clear footer and add action buttons
-            detailModalFooter.innerHTML = '';
-
-            if (currentUser && currentUser.role === 'admin') {
-                // Edit button
-                const editBtn = document.createElement('button');
-                editBtn.className = 'btn btn-primary';
-                editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
-                editBtn.addEventListener('click', () => {
-                    eventDetailModal.style.display = 'none';
-                    openEventModal(new Date(event.date), event);
-                });
-
-                // Delete button
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn btn-danger';
-                deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Hapus';
-                deleteBtn.addEventListener('click', () => {
-                    confirmDeleteEvent(event);
-                });
-
-                detailModalFooter.appendChild(editBtn);
-                detailModalFooter.appendChild(deleteBtn);
-            }
-
-            // Close button
-            const closeBtn = document.createElement('button');
-            closeBtn.className = 'btn';
-            closeBtn.textContent = 'Tutup';
-            closeBtn.addEventListener('click', () => {
-                eventDetailModal.style.display = 'none';
-            });
-            detailModalFooter.appendChild(closeBtn);
-
-            eventDetailModal.style.display = 'block';
-        }
-
-        // Open event modal for adding/editing
-        function openEventModal(date, event = null) {
-            selectedDate = date;
-            selectedEvent = event;
-
-            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            modalDate.textContent = date.toLocaleDateString('id-ID', dateOptions);
-
-            // Show events for this date
-            renderEventsForDate(date);
-
-            // Set form values based on whether we're editing or adding
-            if (event) {
-                eventTitle.value = event.title;
-                eventDesc.value = event.description || '';
-                deleteEventBtn.style.display = 'inline-block';
-            } else {
-                eventTitle.value = '';
-                eventDesc.value = '';
-                deleteEventBtn.style.display = 'none';
-            }
-
-            modal.style.display = 'block';
-        }
-
-        // Render events for a specific date
-        function renderEventsForDate(date) {
-            eventList.innerHTML = '';
-
-            const dayEvents = events.filter(e => {
-                const eDate = new Date(e.date);
-                return eDate.toDateString() === date.toDateString();
-            });
-
-            if (dayEvents.length > 0) {
-                dayEvents.forEach(e => {
-                    const eventElement = document.createElement('div');
-                    eventElement.className = 'event';
-                    eventElement.textContent = e.title;
-                    eventElement.addEventListener('click', (ev) => {
-                        ev.stopPropagation();
-                        showEventDetail(e);
-                    });
-                    eventList.appendChild(eventElement);
-                });
-            } else {
-                eventList.innerHTML = '<p class="no-events">Tidak ada acara</p>';
-            }
-        }
-
-        // Save event (add or update)
-        async function saveEvent() {
-            // Validasi admin
-            if (!currentUser || currentUser.role !== 'admin') {
-                alert('Hanya admin yang bisa menambah/mengubah acara');
-                return;
-            }
-
-            const title = eventTitle.value.trim();
-            const description = eventDesc.value.trim();
-
-            // Validasi input
-            if (!title) {
-                alert('Judul acara tidak boleh kosong');
-                eventTitle.focus();
-                return;
-            }
-
-            try {
-                if (selectedEvent) {
-                    // Update existing event
-                    const { error } = await supabase
-                        .from('events')
-                        .update({
-                            title: title,
-                            description: description
-                        })
-                        .eq('id', selectedEvent.id);
-
-                    if (error) throw error;
-                    alert('Acara berhasil diperbarui');
-                } else {
-                    // Add new event
-                    const newEvent = {
-                        id: Date.now(),
-                        date: selectedDate.toISOString(),
-                        title,
-                        description,
-                        created_by: currentUser.username
-                    };
-
-                    const { error } = await supabase
-                        .from('events')
-                        .insert([newEvent]);
-
-                    if (error) throw error;
-                    alert('Acara berhasil ditambahkan');
-                }
-
-                // Refresh data
-                events = await loadEvents();
-                renderCalendar();
-                renderMonthEvents();
-                modal.style.display = 'none';
-
-            } catch (error) {
-                console.error('Error saving event:', error);
-                alert('Gagal menyimpan acara: ' + error.message);
-            }
-        }
-
-        // Confirm before deleting an event
-        function confirmDeleteEvent(event) {
-            if (confirm('Apakah Anda yakin ingin menghapus acara ini?')) {
-                deleteEventConfirmed(event);
-            }
-        }
-
-        // Delete event after confirmation
-        function deleteEvent() {
-            if (!currentUser || currentUser.role !== 'admin') {
-                alert('Hanya admin yang bisa menghapus acara');
-                return;
-            }
-
-            if (!selectedEvent) {
-                alert('Tidak ada acara yang dipilih untuk dihapus');
-                return;
-            }
-
-            confirmDeleteEvent(selectedEvent);
-        }
-
-        // Actual deletion logic
-        async function deleteEventConfirmed(event) {
-            try {
-                const { error } = await supabase
+                const { data, error } = await supabase
                     .from('events')
-                    .delete()
-                    .eq('id', event.id);
+                    .select('*')
+                    .gte('date', firstDayOfMonth.toISOString())
+                    .lte('date', lastDayOfMonth.toISOString())
+                    .order('date', { ascending: true });
 
-                if (error) throw error;
+                if (error) {
+                    console.error('Error loading events:', error);
+                    return [];
+                }
+                return data || [];
+            }
 
+            // Initialize the application
+            async function init() {
+                if (localStorage.getItem('currentUser')) {
+                    currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                    events = await loadEvents();
+                    handleSuccessfulLogin();
+
+                    // Subscribe to realtime updates
+                    supabase
+                        .channel('events-changes')
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, async () => {
+                            events = await loadEvents();
+                            renderCalendar();
+                            renderMonthEvents();
+                        })
+                        .subscribe();
+                }
+            }
+
+            // Navigation between months
+            async function navigateMonth(direction) {
+                currentDate.setMonth(currentDate.getMonth() + direction);
                 events = await loadEvents();
-                alert('Acara berhasil dihapus');
                 renderCalendar();
                 renderMonthEvents();
-                modal.style.display = 'none';
-                eventDetailModal.style.display = 'none';
-
-            } catch (error) {
-                console.error('Error deleting event:', error);
-                alert('Gagal menghapus acara: ' + error.message);
             }
-        }
 
-        // Initialize the application
-        init();
+            // Login handler
+            function handleLogin() {
+                const username = usernameInput.value.trim();
+                const password = passwordInput.value.trim();
+
+                const user = users.find(u => u.username === username && u.password === password);
+
+                if (user) {
+                    currentUser = user;
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    handleSuccessfulLogin();
+                } else {
+                    loginMessage.textContent = 'Username atau password salah';
+                    loginMessage.style.color = 'red';
+                }
+            }
+
+            // After successful login
+            async function handleSuccessfulLogin() {
+                loginSection.style.display = 'none';
+                calendarSection.style.display = 'block';
+                loginMessage.textContent = '';
+
+                // Update UI based on user role
+                document.getElementById('welcome-user').textContent = `Selamat datang, ${currentUser.username}`;
+                const roleBadge = document.getElementById('user-role-badge');
+                roleBadge.textContent = currentUser.role === 'admin' ? 'Admin' : 'User';
+                roleBadge.className = `user-badge ${currentUser.role}`;
+
+                // Show admin controls if admin
+                if (adminControls) {
+                    adminControls.style.display = currentUser.role === 'admin' ? 'block' : 'none';
+                }
+
+                events = await loadEvents();
+                renderCalendar();
+                renderMonthEvents();
+            }
+
+            // Logout handler
+            function handleLogout() {
+                currentUser = null;
+                localStorage.removeItem('currentUser');
+                usernameInput.value = '';
+                passwordInput.value = '';
+                loginSection.style.display = 'block';
+                calendarSection.style.display = 'none';
+
+                // Reset UI
+                document.getElementById('welcome-user').textContent = 'Selamat datang, ';
+                const roleBadge = document.getElementById('user-role-badge');
+                roleBadge.textContent = '';
+                roleBadge.className = 'user-badge';
+            }
+
+            // Render the calendar
+            function renderCalendar() {
+                const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                    "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+                monthYearElement.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+
+                calendarGrid.innerHTML = '';
+
+                // Day headers
+                const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+                dayNames.forEach(day => {
+                    const dayHeader = document.createElement('div');
+                    dayHeader.className = 'day-header';
+                    dayHeader.textContent = day;
+                    calendarGrid.appendChild(dayHeader);
+                });
+
+                const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+                const daysInMonth = lastDay.getDate();
+                const startingDay = firstDay.getDay();
+
+                // Previous month days
+                const prevMonthLastDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate();
+                for (let i = 0; i < startingDay; i++) {
+                    const dayElement = document.createElement('div');
+                    dayElement.className = 'day other-month';
+                    dayElement.textContent = prevMonthLastDay - startingDay + i + 1;
+                    calendarGrid.appendChild(dayElement);
+                }
+
+                // Current month days
+                const today = new Date();
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const dayElement = document.createElement('div');
+                    dayElement.className = 'day';
+
+                    // Highlight today
+                    const isToday = currentDate.getFullYear() === today.getFullYear() &&
+                        currentDate.getMonth() === today.getMonth() &&
+                        i === today.getDate();
+                    if (isToday) {
+                        dayElement.classList.add('today');
+                    }
+
+                    dayElement.innerHTML = `<div class="day-number">${i}</div>`;
+
+                    // Add events for this day
+                    const currentDayEvents = getEventsForDay(i);
+                    currentDayEvents.forEach(event => {
+                        const eventElement = document.createElement('div');
+                        eventElement.className = 'event';
+                        eventElement.textContent = event.title;
+                        eventElement.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            showEventDetail(event);
+                        });
+                        dayElement.appendChild(eventElement);
+                    });
+
+                    // Add click event for adding/viewing events
+                    dayElement.addEventListener('click', () => {
+                        const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
+                        openEventModal(clickedDate);
+                    });
+
+                    calendarGrid.appendChild(dayElement);
+                }
+
+                // Next month days
+                const totalCells = startingDay + daysInMonth;
+                const remainingCells = totalCells <= 35 ? 35 - totalCells : 42 - totalCells;
+                for (let i = 1; i <= remainingCells; i++) {
+                    const dayElement = document.createElement('div');
+                    dayElement.className = 'day other-month';
+                    dayElement.textContent = i;
+                    calendarGrid.appendChild(dayElement);
+                }
+            }
+
+            // Get events for a specific day
+            function getEventsForDay(day) {
+                return events.filter(event => {
+                    const eventDate = new Date(event.date);
+                    return eventDate.getFullYear() === currentDate.getFullYear() &&
+                        eventDate.getMonth() === currentDate.getMonth() &&
+                        eventDate.getDate() === day;
+                });
+            }
+
+            // Render month events list
+            function renderMonthEvents() {
+                eventsListContainer.innerHTML = '';
+
+                // Filter events for current month
+                const monthEvents = events.filter(event => {
+                    const eventDate = new Date(event.date);
+                    return eventDate.getFullYear() === currentDate.getFullYear() &&
+                        eventDate.getMonth() === currentDate.getMonth();
+                });
+
+                // Update events count
+                eventsCount.textContent = `${monthEvents.length} kegiatan`;
+
+                if (monthEvents.length === 0) {
+                    const noEvents = document.createElement('div');
+                    noEvents.className = 'no-events';
+                    noEvents.textContent = 'Tidak ada kegiatan di bulan ini';
+                    eventsListContainer.appendChild(noEvents);
+                    return;
+                }
+
+                // Sort events by date
+                monthEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                // Display each event
+                monthEvents.forEach(event => {
+                    const eventElement = createEventElement(event);
+                    eventsListContainer.appendChild(eventElement);
+                });
+            }
+
+            // Create an event element for the month view
+            function createEventElement(event) {
+                const eventDate = new Date(event.date);
+                const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+                const formattedDate = `${dayNames[eventDate.getDay()]}, ${eventDate.getDate()}/${eventDate.getMonth() + 1}`;
+
+                const eventElement = document.createElement('div');
+                eventElement.className = 'month-event';
+
+                eventElement.innerHTML = `
+                <div class="event-date">${formattedDate}</div>
+                <div class="event-info">
+                    <h4>${event.title}</h4>
+                    ${event.description ? `<p>${event.description.substring(0, 50)}${event.description.length > 50 ? '...' : ''}</p>` : ''}
+                </div>
+            `;
+
+                // Add admin actions if user is admin
+                if (currentUser && currentUser.role === 'admin') {
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'event-actions';
+
+                    // Edit button
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'event-action-btn edit';
+                    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                    editBtn.title = 'Edit';
+                    editBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openEventModal(new Date(event.date), event);
+                    });
+
+                    // Delete button
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'event-action-btn delete';
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                    deleteBtn.title = 'Delete';
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        confirmDeleteEvent(event);
+                    });
+
+                    actionsDiv.appendChild(editBtn);
+                    actionsDiv.appendChild(deleteBtn);
+                    eventElement.appendChild(actionsDiv);
+                }
+
+                // Add click event for showing details
+                eventElement.addEventListener('click', () => {
+                    showEventDetail(event);
+                });
+
+                return eventElement;
+            }
+
+            // Show event details
+            function showEventDetail(event) {
+                const eventDate = new Date(event.date);
+                const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+
+                detailModalTitle.textContent = 'Detail Kegiatan';
+                detailDate.textContent = eventDate.toLocaleDateString('id-ID', dateOptions);
+                detailTitle.textContent = event.title;
+                detailDesc.textContent = event.description || 'Tidak ada deskripsi';
+
+                // Clear footer and add action buttons
+                detailModalFooter.innerHTML = '';
+
+                if (currentUser && currentUser.role === 'admin') {
+                    // Edit button
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'btn btn-primary';
+                    editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+                    editBtn.addEventListener('click', () => {
+                        eventDetailModal.style.display = 'none';
+                        openEventModal(new Date(event.date), event);
+                    });
+
+                    // Delete button
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn btn-danger';
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Hapus';
+                    deleteBtn.addEventListener('click', () => {
+                        confirmDeleteEvent(event);
+                    });
+
+                    detailModalFooter.appendChild(editBtn);
+                    detailModalFooter.appendChild(deleteBtn);
+                }
+
+                // Close button
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'btn';
+                closeBtn.textContent = 'Tutup';
+                closeBtn.addEventListener('click', () => {
+                    eventDetailModal.style.display = 'none';
+                });
+                detailModalFooter.appendChild(closeBtn);
+
+                eventDetailModal.style.display = 'block';
+            }
+
+            // Open event modal for adding/editing
+            function openEventModal(date, event = null) {
+                selectedDate = date;
+                selectedEvent = event;
+
+                const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                modalDate.textContent = date.toLocaleDateString('id-ID', dateOptions);
+
+                // Show events for this date
+                renderEventsForDate(date);
+
+                // Set form values based on whether we're editing or adding
+                if (event) {
+                    eventTitle.value = event.title;
+                    eventDesc.value = event.description || '';
+                    deleteEventBtn.style.display = 'inline-block';
+                } else {
+                    eventTitle.value = '';
+                    eventDesc.value = '';
+                    deleteEventBtn.style.display = 'none';
+                }
+
+                modal.style.display = 'block';
+            }
+
+            // Render events for a specific date
+            function renderEventsForDate(date) {
+                eventList.innerHTML = '';
+
+                const dayEvents = events.filter(e => {
+                    const eDate = new Date(e.date);
+                    return eDate.toDateString() === date.toDateString();
+                });
+
+                if (dayEvents.length > 0) {
+                    dayEvents.forEach(e => {
+                        const eventElement = document.createElement('div');
+                        eventElement.className = 'event';
+                        eventElement.textContent = e.title;
+                        eventElement.addEventListener('click', (ev) => {
+                            ev.stopPropagation();
+                            showEventDetail(e);
+                        });
+                        eventList.appendChild(eventElement);
+                    });
+                } else {
+                    eventList.innerHTML = '<p class="no-events">Tidak ada acara</p>';
+                }
+            }
+
+            // Save event (add or update)
+            async function saveEvent() {
+                // Validasi admin
+                if (!currentUser || currentUser.role !== 'admin') {
+                    alert('Hanya admin yang bisa menambah/mengubah acara');
+                    return;
+                }
+
+                const title = eventTitle.value.trim();
+                const description = eventDesc.value.trim();
+
+                // Validasi input
+                if (!title) {
+                    alert('Judul acara tidak boleh kosong');
+                    eventTitle.focus();
+                    return;
+                }
+
+                try {
+                    if (selectedEvent) {
+                        // Update existing event
+                        const { error } = await supabase
+                            .from('events')
+                            .update({
+                                title: title,
+                                description: description
+                            })
+                            .eq('id', selectedEvent.id);
+
+                        if (error) throw error;
+                        alert('Acara berhasil diperbarui');
+                    } else {
+                        // Add new event
+                        const newEvent = {
+                            id: Date.now(),
+                            date: selectedDate.toISOString(),
+                            title,
+                            description,
+                            created_by: currentUser.username
+                        };
+
+                        const { error } = await supabase
+                            .from('events')
+                            .insert([newEvent]);
+
+                        if (error) throw error;
+                        alert('Acara berhasil ditambahkan');
+                    }
+
+                    // Refresh data
+                    events = await loadEvents();
+                    renderCalendar();
+                    renderMonthEvents();
+                    modal.style.display = 'none';
+
+                } catch (error) {
+                    console.error('Error saving event:', error);
+                    alert('Gagal menyimpan acara: ' + error.message);
+                }
+            }
+
+            // Confirm before deleting an event
+            function confirmDeleteEvent(event) {
+                if (confirm('Apakah Anda yakin ingin menghapus acara ini?')) {
+                    deleteEventConfirmed(event);
+                }
+            }
+
+            // Delete event after confirmation
+            function deleteEvent() {
+                if (!currentUser || currentUser.role !== 'admin') {
+                    alert('Hanya admin yang bisa menghapus acara');
+                    return;
+                }
+
+                if (!selectedEvent) {
+                    alert('Tidak ada acara yang dipilih untuk dihapus');
+                    return;
+                }
+
+                confirmDeleteEvent(selectedEvent);
+            }
+
+            // Actual deletion logic
+            async function deleteEventConfirmed(event) {
+                try {
+                    const { error } = await supabase
+                        .from('events')
+                        .delete()
+                        .eq('id', event.id);
+
+                    if (error) throw error;
+
+                    events = await loadEvents();
+                    alert('Acara berhasil dihapus');
+                    renderCalendar();
+                    renderMonthEvents();
+                    modal.style.display = 'none';
+                    eventDetailModal.style.display = 'none';
+
+                } catch (error) {
+                    console.error('Error deleting event:', error);
+                    alert('Gagal menghapus acara: ' + error.message);
+                }
+            }
+
+            // Initialize the application
+            init();
+        }
     </script>
 </body>
 

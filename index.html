@@ -1007,23 +1007,21 @@
             </div>
         </div>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* === GLOBAL INIT === */
 const supabaseUrl = 'https://zpitonulsomqjmgmphzo.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwaXRvbnVsc29tcWptZ21waHpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NDE1OTEsImV4cCI6MjA1OTQxNzU5MX0.pNLPFUOCRFXLFRvKLPTbMsi_HFRcJT3B73SZxgdviqk';
-let supabase;
+let supabaseClient; // Renamed to avoid confusion with the global supabase object
 
 document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    supabase = supabase.createClient(supabaseUrl, supabaseKey);
-    console.log('[Supabase] Initialized');
-    await initApp(); 
-  } catch (err) {
-    console.error('[Supabase] Init failed:', err);
-    alert('Aplikasi gagal dimulai. Silakan refresh halaman.');
-  }
+    try {
+        supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        console.log('[Supabase] Initialized');
+        await initApp();
+    } catch (err) {
+        console.error('[Supabase] Init failed:', err);
+        alert('Aplikasi gagal dimulai. Silakan refresh halaman.');
+    }
 });
 
 /* === YOUR ORIGINAL CODE (100% PRESERVED) === */
